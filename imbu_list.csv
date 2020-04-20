@@ -1,0 +1,24 @@
+name;var;category
+Chop (Axe Fight.);axe;skills
+Slash (Sword Fight.);sword;skills
+Bash (Club Fight.);club;skills
+Precision (Dist. Fight.);dist;skills
+Blockade (Shield);shield;skills
+Epiphany (Magic);mlev;skills
+Scorch (Fire Dmg);fire_dmg;ele_dmg
+Venom (Earth Dmg);earth_dmg;ele_dmg
+Frost (Ice Dmg);ice_dmg;ele_dmg
+Electrify (Energy Dmg);energy_dmg;ele_dmg
+Reap (Death Dmg);death_dmg;ele_dmg
+Lich Shroud (Death Prot);death_prot;ele_dmg
+Snake Skin (Earth Prot);earth_prot;ele_prot
+Dragon Hide (Fire Prot);fire_prot;ele_prot
+Quara Scale (Ice Prot);ice_prot;ele_prot
+Cloud Fabric (Energy Prot);energy_prot;ele_prot
+Demon Presence (Holy Prot);holy_prot;ele_prot
+Vampirism (Life Leech);life_leech;leech
+Void (Mana Leech);mana_leech;leech
+Swiftness (Speed);speed;speed
+Featherweight (Capacity);cap;cap
+Strike (Crit);crit;crit
+Vibrancy (Paralysis Defl.);paral_defl;paral
