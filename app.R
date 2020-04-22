@@ -23,40 +23,36 @@ item_list <- merge(imbu_all, item_list, by.x = "var", by.y = "imbuement", all = 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
     
-    # Application title
     titlePanel("Imbuement price"),
     
-    # Sidebar with a slider input for number of bins 
-    sidebarLayout(
-        
-        sidebarPanel(width = 12,
-                     tags$head( tags$style(HTML(" .selectize-input {  min-width: 150px; padding-top: 5px;} ")) ),
-                     selectizeInput(
-                         inputId = "s_imbu",
-                         label = "Select imbuent:",
-                         choices = imbu_select_list),
-                     selectizeInput("s_level",
-                                    label = "Select level:",
-                                    choices = imbu_levels,
-                                    selected = imbu_levels[length(imbu_levels)]
-                     )
-        ),
-        
-        # Show a plot of the generated distribution
-        mainPanel(width = 12,
-                  tags$head(
-                      tags$style(type="text/css", "label{ display: table-cell; text-align: left; vertical-align: middle; margin-top: 25px;} 
+    fluidRow(width = 12,
+             tags$head( tags$style(HTML(" .selectize-input {  min-width: 150px; padding-top: 5px;} ")) ),
+             fluidRow(
+                 column(6,
+                        tags$head(
+                            tags$style(type="text/css", "label{ display: table-cell; text-align: left; vertical-align: middle; margin-top: 25px;} 
                 .form-group { display: table-row;}")
-                  ),
-                  uiOutput(outputId = "ui_items"),
-                  h3("Gold Token Price:"),
-                  fluidRow(column(3,numericInput(inputId = "price_token_buy", label = "Buy Price:", value = 30000, step = 1)),
-                           column(3, textOutput("tot_tokens_buy", inline = T)),
-                           column(3, numericInput(inputId = "price_token_sell", label = "Sell Price:", value = 30000, step = 1)),
-                           column(3, textOutput("tot_tokens_sell", inline = T))
-                  )
-        )
-    )
+                        ),
+                        selectizeInput(
+                            inputId = "s_imbu",
+                            label = "Select imbuent:",
+                            choices = imbu_select_list),
+                        selectizeInput("s_level",
+                                       label = "Select level:",
+                                       choices = imbu_levels,
+                                       selected = imbu_levels[length(imbu_levels)])
+                 ),
+                 h3("Gold Token Price:"),
+                 fluidRow(column(2,numericInput(inputId = "price_token", label = "Price:", value = 30000, step = 1)),
+                 )
+             ),
+             hr(),
+             fluidRow(
+                 column(12,
+                        uiOutput(outputId = "ui_items")
+                 )
+             )
+    ),
 )
 
 # Define server logic required to draw a histogram
@@ -69,39 +65,45 @@ server <- function(input, output) {
                       Powerful=3)
         rows.selected <- item_list[name == input$s_imbu]
         
+        # output$tot_tokens <- renderText({paste0("TOT: ", input$price_token * lvl * 2)})
         
-        output$tot_1_buy <- renderText({paste0("TOT: ", input$price_1_buy * input$quant_1)})
-        output$tot_1_sell <- renderText({paste0("TOT: ", input$price_1_sell * input$quant_1)})
         
-        output$tot_tokens_buy <- renderText({paste0("TOT: ", input$price_token_buy * lvl)})
-        output$tot_tokens_sell <- renderText({paste0("TOT: ", input$price_token_sell * lvl)})
         
+        # Basic
+        output$choice_1 <- renderText({paste0(input$price_1 * input$quant_1, "vs.", input$price_token * 1 * 2)})
+
+        # output$choice_1_buy <- renderText({paste0(input$price_token_sell * 1 * 2)})
+        # column(3, textOutput("tot_tokens")),
         
         fluidPage(
             tags$head( tags$style(HTML(" .numeric-input {  margin-top: 150px;} ")) ),
             h1(sprintf("Items for %s %s", input$s_level, input$s_imbu)),
-            fluidRow(numericInput(inputId = "quant_1", label = h3(rows.selected[stage == 1]$item), value = rows.selected[stage == 1]$number_of)),
-            fluidRow(column(6, numericInput(inputId = "price_1_buy", label = "Buy Price:", value = 1000, width = "25%", step = 1)),
-                     column(6, textOutput("tot_1_buy", inline = T))
+
+            fluidRow(
+                column(4,offset = 1, 
+                       h3(rows.selected[stage == 1]$item),
+                       numericInput(inputId = "quant_1", label = "Quantity", value = rows.selected[stage == 1]$number_of),
+                       numericInput(inputId = "price_1", label = "Price:", value = 1000, step = 1)
+                ),
+                column(4, 
+                       textOutput("choice_1")
+                )
+          
             ),
-            fluidRow(column(6,numericInput(inputId = "price_1_sell", label = "Sell Price:", value = 1000, width = "25%", step = 1)),
-                     column(6,textOutput("tot_1_sell", inline = T))
-            ),
+            hr(),
             conditionalPanel("input.s_level != 'Basic'",
                              fluidRow(
                                  h3(rows.selected[stage == 2]$item),
                                  numericInput(inputId = "quant_2", label = "Quantity:", value = rows.selected[stage == 2]$number_of),
-                                 numericInput(inputId = "price_3_buy", label = "Buy Price:", value = 1000, width = "25%", step = 1),
-                                 numericInput(inputId = "price_3_sell", label = "Sell Price:", value = 1000, width = "25%", step = 1)
+                                 numericInput(inputId = "price_3_buy", label = "Buy Price:", value = 1000, width = "25%", step = 1)
                              )
             ),
             conditionalPanel("input.s_level == 'Powerful'",
                              fluidRow(
                                  h3(rows.selected[stage == 3]$item),
                                  numericInput(inputId = "quant_3", label = "Quantity:", value = rows.selected[stage == 3]$number_of, width = "25%", step = 1),
-                                 numericInput(inputId = "price_3_buy", label = "Buy Price:", value = 1000, width = "25%", step = 1),
-                                 numericInput(inputId = "price_3_sell", label = "Sell Price:", value = 1000, width = "25%", step = 1)
-                                 
+                                 numericInput(inputId = "price_3_buy", label = "Buy Price:", value = 1000, width = "25%", step = 1)
+
                              )
             ),
         )
