@@ -29,21 +29,36 @@ ui <- fluidPage(
                         selectizeInput(
                             inputId = "s_imbu",
                             label = "Select imbuent:",
-                            choices = imbu_select_list),
-                        selectizeInput("s_level",
-                                       label = "Select level:",
-                                       choices = imbu_levels,
-                                       selected = imbu_levels[length(imbu_levels)])
+                            choices = imbu_select_list)
                  ),
                  column(6, 
-                        h3("Gold Token Price:"),
-                        fluidRow(column(6,numericInput(inputId = "price_token", label = "Price:", value = 30000, step = 1)))
+                        numericInput(inputId = "price_token",
+                                     label = "Gold Token Price:", 
+                                     value = 30000,
+                                     step = 1)
+                        
                  )
              ),
              hr(),
              fluidRow(
                  column(12,
                         uiOutput(outputId = "ui_items")
+                 )
+             ),
+             fluidRow(
+                 column(4, 
+                        selectizeInput("s_level",
+                                       label = "Select level:",
+                                       choices = imbu_levels,
+                                       selected = imbu_levels[length(imbu_levels)])
+                 ),
+                 column(4,
+                        actionButton(inputId = "but_submit", label = ">>"))
+             ),
+
+             fluidRow(
+                 column(12,
+                        textOutput(outputId = "result")
                  )
              )
     ),
@@ -53,135 +68,122 @@ ui <- fluidPage(
 server <- function(input, output) {
     
     
+    rows.selected <- eventReactive(input$s_imbu, {
+        imbu_tab[name == input$s_imbu]
+    })
     
+    cost.list <- reactive({
+        list(Basic_option_0t = input$quant_1 * input$price_1,
+             Basic_option_2t = 2 * input$price_token,
+             Intricate_option_0t = input$quant_1 * input$price_1 + 
+                 input$quant_2 * input$price_2,
+             Intricate_option_2t = 2 * input$price_token + 
+                 input$quant_2 * input$price_2,
+             Intricate_option_4t = 4 * input$price_token,
+             Powerful_option_0t = input$quant_1 * input$price_1 +
+                 input$quant_2 * input$price_2 + 
+                 input$quant_3 * input$price_3,
+             Powerful_option_2t = 2 * input$price_token +
+                 input$quant_2 * input$price_2 +
+                 input$quant_3 * input$price_3,
+             Powerful_option_4t = 4 * input$price_token +
+                 input$quant_3 * input$price_3,
+             Powerful_option_6t = 6 * input$price_token
+        )
+        
+    })
+    
+    
+    output$result <- eventReactive(input$but_submit, {
+        lvl <- input$s_level
+        
+        list_of_results <- names(which.min(cost.list()[names(cost.list()) %like% lvl]))
+        
+        if(lvl == "Basic"){
+            if(list_of_results == "Basic_option_0t"){
+                sprintf("Kup %dx %s",
+                        input$quant_1, rows.selected()[stage == 1]$item)                
+            }else if(list_of_results == "Basic_option_2t"){
+                sprintf("Kup 2x Gold Tokens")
+            }
+        }else if(lvl == "Intricate"){
+            if(list_of_results == "Intricate_option_0t"){
+                sprintf("Kup %dx %s i %dx %s zamiast 4x Gold Tokens",
+                        input$quant_1, rows.selected()[stage == 1]$item,
+                        input$quant_2, rows.selected()[stage == 2]$item)                
+            }else if(list_of_results == "Intricate_option_2t"){
+                sprintf("Kup %dx %s i 2x Gold Tokens",
+                        input$quant_2, rows.selected()[stage == 2]$item)
+            }else if(list_of_results == "Intricate_option_4t"){
+                sprintf("Kup 4x Gold Tokens")
+            }
+        }else{
+            if(list_of_results == "Powerful_option_0t"){
+                sprintf("Kup %dx %s,  %dx %s,  %dx %s zamiast 6x Gold Tokens",
+                        input$quant_1, rows.selected()[stage == 1]$item,
+                        input$quant_2, rows.selected()[stage == 2]$item,                
+                        input$quant_3, rows.selected()[stage == 3]$item)                
+            }else if(list_of_results == "Powerful_option_2t"){
+                sprintf("Kup %dx %s i %dx %s i 2x Gold Tokens",
+                        input$quant_2, rows.selected()[stage == 2]$item,
+                        input$quant_3, rows.selected()[stage == 3]$item)
+            }else if(list_of_results == "Powerful_option_4t"){
+                sprintf("Kup %dx %s i 4x Gold Tokens",
+                        input$quant_3, rows.selected()[stage == 3]$item)
+            }else if(list_of_results == "Powerful_option_6t"){
+                sprintf("Kup 6x Gold Tokens")
+            }
+        }
+        
+    })
     
     output$ui_items <- renderUI({
-        lvl <- switch(input$s_level,
-                      Basic=1,
-                      Intricate=2,
-                      Powerful=3)
         
         
         
-        rows.selected <- imbu_tab[name == input$s_imbu]
         
-        # Musze to ogarnac - jak zrobic porownanie w prostyi przejrzysty sposob?
-        
-        # Zle rozwiazanie - aktualizuje sie dopiero po wyborze poziomu :(. Serio. Nie powinienem wybierac poziomu, tylko wyswietlac dla kazdego uzupelnionego (price > 0)
-        # dt <- eventReactive(input$s_level,{
-        #     dt_out_choice <- data.table(`Lp.` = 1,
-        #                                 sum_price = input$quant_1 * input$price_1,
-        #                                 token_price = input$price_token * 1 * 2)
-        #     if(lvl > 1){
-        #         for(i in 2:lvl){
-        #             dt_out_choice <- rbindlist(l = list(dt_out_choice,
-        #                                                 eval(
-        #                                                     parse(
-        #                                                         text = stringr::str_interp("data.table(`Lp.` = ${i},
-        #                                                                                      sum_price = input$quant_${i} * input$price_${i},
-        #                                                                                      token_price = input$price_token * ${i} * 2)")
-        #                                                     )
-        #                                                 )
-        #             )
-        #             )
-        #             
-        #         }
-        #     }
+        # dt <- reactive({
+        #     dt_out_choice <- data.table(`Lp.` = c(1:3),
+        #                                 sum_price = c(input$quant_1 * input$price_1,
+        #                                               input$quant_2 * input$price_2,
+        #                                               input$quant_3 * input$price_3
+        #                                 ),
+        #                                 token_price = c(input$price_token * 1 * 2,
+        #                                                 input$price_token * 2 * 2,
+        #                                                 input$price_token * 3 * 2))
         #     dt_out_choice[, cum_price := cumsum(sum_price)]
         #     dt_out_choice
         #     
         # })
-        dt <- reactive({
-            dt_out_choice <- data.table(`Lp.` = c(1:3),
-                                        sum_price = c(input$quant_1 * input$price_1,
-                                                      input$quant_2 * input$price_2,
-                                                      input$quant_3 * input$price_3
-                                        ),
-                                        token_price = c(input$price_token * 1 * 2,
-                                                        input$price_token * 2 * 2,
-                                                        input$price_token * 3 * 2))
-            dt_out_choice[, cum_price := cumsum(sum_price)]
-            dt_out_choice
-            
-        })
+        # output$choice_1 <- renderTable({
+        #     dt()
+        # })
         
-        # Basic
-        output$choice_1 <- renderText({
-            if(dt()$cum_price[1] >= dt()$token_price[1]){
-                sprintf("Kup 2x Gold Tokens")
-            }else{
-                sprintf("Kup %dx %s zamiast 2x Gold Tokens",  input$quant_1, rows.selected[stage == 1]$item)
-            }
-            
-            
-        })
-        # Intricate
-        output$choice_2 <- renderText({
-            if(dt()$cum_price[2] >= dt()$token_price[2]){
-                if(dt()$sum_price[2] < dt()$token_price[2]/2){
-                    sprintf("Kup 2x Gold Tokens i %dx %s",
-                            input$quant_2, rows.selected[stage == 2]$item)
-                }else{
-                    sprintf("Kup 4x Gold Tokens")
-                }
-            }else{
-                if(dt()$sum_price[1] > dt()$token_price[1]){
-                    sprintf("Kup 2x Gold Tokens i %dx %s",
-                            input$quant_2, rows.selected[stage == 2]$item)
-                }else{
-                    sprintf("Kup %dx %s i %dx %s zamiast 4x Gold Tokens",
-                            input$quant_1, rows.selected[stage == 1]$item,
-                            input$quant_2, rows.selected[stage == 2]$item)
-                }
-            }
-        })
-        
-      
         
         fluidPage(
             tags$head( tags$style(HTML(" .numeric-input {  margin-top: 150px;} ")) ),
-            h1(sprintf("Items for %s %s", input$s_level, input$s_imbu)),
+            h1(sprintf("Items for %s",  input$s_imbu)),
             
             fluidRow(
-                column(4,offset = 1, 
-                       h3(rows.selected[stage == 1]$item),
-                       numericInput(inputId = "quant_1", label = "Quantity", value = rows.selected[stage == 1]$number_of),
+                column(4,
+                       h3(rows.selected()[stage == 1]$item),
+                       numericInput(inputId = "quant_1", label = "Quantity:", value = rows.selected()[stage == 1]$number_of),
                        numericInput(inputId = "price_1", label = "Price:", value = 0, step = 1)
                 ),
-                column(6, offset = 1,
-                       textOutput(outputId = "choice_1")
-                       
+                column(4, 
+                       h3(rows.selected()[stage == 2]$item),
+                       numericInput(inputId = "quant_2", label = "Quantity:", value = rows.selected()[stage == 2]$number_of),
+                       numericInput(inputId = "price_2", label = "Price:", value = 1000, step = 1)
+                ),
+                column(4,
+                       h3(rows.selected()[stage == 3]$item),
+                       numericInput(inputId = "quant_3", label = "Quantity:", value = rows.selected()[stage == 3]$number_of),
+                       numericInput(inputId = "price_3", label = "Price:", value = 1000, step = 1)
                 )
                 
-                
-                
             ),
-            hr(),
-            conditionalPanel("input.s_level != 'Basic'",
-                             fluidRow(
-                                 column(4, offset = 1,
-                                        h3(rows.selected[stage == 2]$item),
-                                        numericInput(inputId = "quant_2", label = "Quantity:", value = rows.selected[stage == 2]$number_of),
-                                        numericInput(inputId = "price_2", label = "Price:", value = 1000, step = 1)
-                                 ),
-                                 column(6, offset = 1,
-                                        textOutput(outputId = "choice_2")
-                                 )
-                             ),
-            ),
-            conditionalPanel("input.s_level == 'Powerful'",
-                             fluidRow(
-                                 column(4, offset = 1,
-                                        h3(rows.selected[stage == 3]$item),
-                                        numericInput(inputId = "quant_3", label = "Quantity:", value = rows.selected[stage == 3]$number_of),
-                                        numericInput(inputId = "price_3", label = "Price:", value = 1000, step = 1)
-                                 ),
-                                 column(6, offset = 1,
-                                        textOutput(outputId = "choice_3")
-                                 )
-                             ),
-            )
         )
+        
     })
     # prices <- reactiveValues(price_1 = 0, price_2 = 0, price_3 = 0)
     # 
