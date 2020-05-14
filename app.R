@@ -21,41 +21,40 @@ ui <- fluidPage(
     fluidRow(width = 12,
              tags$head( tags$style(HTML(" .selectize-input {  min-width: 150px; padding-top: 5px;} ")) ),
              fluidRow(
-                 column(6,
-                        tags$head(
-                            tags$style(type="text/css", "label{ display: table-cell; text-align: left; vertical-align: middle; margin-top: 25px;} 
-                .form-group { display: table-row;}")
-                        ),
+                 column(12, 
+                        numericInput(inputId = "price_token",
+                                     label = "Gold Token Price:", 
+                                     value = 30000,
+                                     step = 1),
+                 ),
+                 column(12,
+                        selectizeInput("s_level",
+                                       label = "Select level:",
+                                       choices = imbu_levels,
+                                       selected = imbu_levels[length(imbu_levels)])
+                 ),
+                 column(12,
+                        #         tags$head(
+                        #             tags$style(type="text/css", "label{ display: table-cell; text-align: left; vertical-align: middle; margin-top: 25px;} 
+                        # .form-group { display: table-row;}")
+                        #         ),
                         selectizeInput(
                             inputId = "s_imbu",
                             label = "Select imbuent:",
                             choices = imbu_select_list)
-                 ),
-                 column(6, 
-                        numericInput(inputId = "price_token",
-                                     label = "Gold Token Price:", 
-                                     value = 30000,
-                                     step = 1)
-                        
                  )
+                 
              ),
-             hr(),
              fluidRow(
                  column(12,
                         uiOutput(outputId = "ui_items")
                  )
              ),
              fluidRow(
-                 column(4, 
-                        selectizeInput("s_level",
-                                       label = "Select level:",
-                                       choices = imbu_levels,
-                                       selected = imbu_levels[length(imbu_levels)])
-                 ),
                  column(4,
-                        actionButton(inputId = "but_submit", label = ">>"))
+                        actionButton(inputId = "but_submit", label = "Oblicz", icon = icon("calculator")))
              ),
-
+             
              fluidRow(
                  column(12,
                         textOutput(outputId = "result")
@@ -139,45 +138,29 @@ server <- function(input, output) {
     
     output$ui_items <- renderUI({
         
-        
-        
-        
-        # dt <- reactive({
-        #     dt_out_choice <- data.table(`Lp.` = c(1:3),
-        #                                 sum_price = c(input$quant_1 * input$price_1,
-        #                                               input$quant_2 * input$price_2,
-        #                                               input$quant_3 * input$price_3
-        #                                 ),
-        #                                 token_price = c(input$price_token * 1 * 2,
-        #                                                 input$price_token * 2 * 2,
-        #                                                 input$price_token * 3 * 2))
-        #     dt_out_choice[, cum_price := cumsum(sum_price)]
-        #     dt_out_choice
-        #     
-        # })
-        # output$choice_1 <- renderTable({
-        #     dt()
-        # })
-        
-        
         fluidPage(
             tags$head( tags$style(HTML(" .numeric-input {  margin-top: 150px;} ")) ),
-            h1(sprintf("Items for %s",  input$s_imbu)),
-            
+            # h1(sprintf("Items for %s",  input$s_imbu)),
             fluidRow(
                 column(4,
-                       h3(rows.selected()[stage == 1]$item),
-                       numericInput(inputId = "quant_1", label = "Quantity:", value = rows.selected()[stage == 1]$number_of),
-                       numericInput(inputId = "price_1", label = "Price:", value = 0, step = 1)
+                       HTML(paste0("<b>",rows.selected()[stage == 1]$item,"</b>")),
+                       fluidRow(
+                           column(5,
+                                  numericInput(inputId = "quant_1", label = "Quantity", value = rows.selected()[stage == 1]$number_of),
+                           ),
+                           column(1,HTML("X")),
+                           column(5,
+                                  numericInput(inputId = "price_1", label = "Price", value = rows.selected()[stage == 1]$price, step = 1) 
+                           )
+                       )
+                       
                 ),
                 column(4, 
-                       h3(rows.selected()[stage == 2]$item),
-                       numericInput(inputId = "quant_2", label = "Quantity:", value = rows.selected()[stage == 2]$number_of),
+                       numericInput(inputId = "quant_2", label = rows.selected()[stage == 2]$item, value = rows.selected()[stage == 2]$number_of),
                        numericInput(inputId = "price_2", label = "Price:", value = 1000, step = 1)
                 ),
                 column(4,
-                       h3(rows.selected()[stage == 3]$item),
-                       numericInput(inputId = "quant_3", label = "Quantity:", value = rows.selected()[stage == 3]$number_of),
+                       numericInput(inputId = "quant_3", label = rows.selected()[stage == 3]$item, value = rows.selected()[stage == 3]$number_of),
                        numericInput(inputId = "price_3", label = "Price:", value = 1000, step = 1)
                 )
                 
@@ -185,14 +168,15 @@ server <- function(input, output) {
         )
         
     })
-    # prices <- reactiveValues(price_1 = 0, price_2 = 0, price_3 = 0)
-    # 
-    # 
-    # if(isolate(prices$price_1) != isolate(input$price_1)){
-    #     prices$price_1 <- isolate(input$price_1)
-    #     update_price(tab = imbu_tab, imbu = input$s_imbu, imbu_item = input$s_level, new_price = isolate(prices$price_1))
-    # }
-    # updateNumericInput(inputId = "price_1", value = isolate(input$price))
+    prices <- reactiveValues(price_1 = 0, price_2 = 0, price_3 = 0)
+    
+    observeEvent(input$but_submit, {
+
+        update_price(tab = imbu_tab, imbu = input$s_imbu, imbu_stage = 1, new_price = input$price_1)
+        
+        # updateNumericInput(inputId = "price_1", value = prices$price_1)
+    })
+    
     
 }
 
