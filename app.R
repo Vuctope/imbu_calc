@@ -14,7 +14,7 @@ imbu_categories <- unique(imbu_tab[,.(name, category)])
 imbu_select_list <- split(x = imbu_categories$name, imbu_categories$category )
 
 # Define UI for application that draws a histogram
-ui <- fluidPage(
+ui <- fluidPage(theme ="bootstrap.css",
     
     titlePanel("Imbuement price"),
     
