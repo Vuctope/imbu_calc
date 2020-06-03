@@ -1,5 +1,10 @@
 prep_imbu_tab <- function(){
   require(data.table)
+  require(stringdist)
+  img_files <- list.files("www", pattern = "\\.gif")
+  img_files <- substr(img_files, 1, nchar(img_files)-4)
+  img_files <- gsub(img_files, pattern = "_", replacement = " ", fixed = T)
+  
   item_list <- data.table(var = c('axe', 'axe', 'axe',
                                   'cap', 'cap', 'cap',
                                   'club', 'club', 'club',
@@ -117,5 +122,9 @@ prep_imbu_tab <- function(){
                                         15, 25, 20,
                                         25, 25, 5),
                           price = rep(0,69))
+
+  img_names_sort <- amatch(item_list$item, img_files, maxDist = 2)
+  img_files <- img_files[img_names_sort]
   
+  item_list <- cbind(item_list, img_files)  
 }
