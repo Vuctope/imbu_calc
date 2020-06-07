@@ -125,6 +125,7 @@ prep_imbu_tab <- function(){
 
   img_names_sort <- amatch(item_list$item, img_files, maxDist = 2)
   img_files <- img_files[img_names_sort]
+  img_files <- gsub(img_files, pattern = "\\s",replacement = "_" )
   
   item_list <- cbind(item_list, img_files)  
 }
